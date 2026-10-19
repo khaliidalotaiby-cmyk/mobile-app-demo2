@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HSBC Mobile Banking App Demo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #e5e5ea;
+            touch-action: manipulation;
+        }
+        ::-webkit-scrollbar {
+            width: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d1d1d6;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body class="flex justify-center items-center min-h-screen p-0 sm:p-4">
+
+    <!-- Mobile Phone Frame (iPhone Air Dimension) -->
+    <div class="w-full sm:w-[414px] h-screen sm:h-[896px] bg-[#f8f8f8] sm:rounded-[40px] shadow-2xl flex flex-col overflow-hidden relative border border-[#d1d1d6]">
+
+        <!-- Navigation Header -->
+        <div class="bg-white px-4 py-3 flex items-center justify-between border-b border-[#e5e5ea] z-20">
+            <div class="flex items-center space-x-3">
+                <button onclick="switchScreen('dashboard')" class="text-black p-1 hover:bg-gray-100 rounded-full transition">
+                    <svg class="w-6 h-6 stroke-current" fill="none" stroke-width="2.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg>
+                </button>
+                <h1 id="header-title" class="text-lg font-semibold text-black tracking-tight">Transactions</h1>
+            </div>
+            <button onclick="showErrorCode()" class="flex flex-col space-y-1 p-2 focus:outline-none">
+                <span class="w-5 h-0.5 bg-black rounded-full"></span>
+                <span class="w-5 h-0.5 bg-black rounded-full"></span>
+                <span class="w-5 h-0.5 bg-black rounded-full"></span>
+            </button>
+        </div>
+
+        <!-- Screen Container -->
+        <div id="app-view" class="flex-1 flex flex-col overflow-hidden relative bg-[#f8f8f8]">
+            <!-- Dynamically Rendered Screen Content -->
+        </div>
+
+        <!-- Bottom Tab Bar -->
+        <div class="bg-white border-t border-gray-200 py-2 px-6 flex justify-around items-center text-xs text-gray-600 z-20">
+            <button onclick="switchScreen('dashboard')" class="flex flex-col items-center space-y-1 focus:text-red-600">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"/></svg>
+                <span class="font-medium">Home</span>
+            </button>
+            <button onclick="switchScreen('transactions')" class="flex flex-col items-center space-y-1 text-red-600">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-2 10h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/></svg>
+                <span class="font-medium">Pay & Transfer</span>
+            </button>
+            <button onclick="showErrorCode()" class="flex flex-col items-center space-y-1 hover:text-black">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M20 4H4c-1.11 0-1.99.89-1.99 2L2 18c0 1.11.89 2 2 2h16c1.11 0 2-.89 2-2V6c0-1.11-.89-2-2-2zm0 14H4v-6h16v6zm0-10H4V6h16v2z"/></svg>
+                <span class="font-medium">Cards</span>
+            </button>
+            <button onclick="showErrorCode()" class="flex flex-col items-center space-y-1 hover:text-black">
+                <svg class="w-6 h-6 fill-current" viewBox="0 0 24 24"><path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/></svg>
+                <span class="font-medium">Save & Invest</span>
+            </button>
+        </div>
+
+    </div>
+
+    <!-- Custom Modal for Alerts -->
+    <div id="custom-modal" class="fixed inset-0 bg-black/50 hidden justify-center items-center z-50 p-4">
+        <div class="bg-white rounded-2xl p-6 max-w-xs w-full shadow-2xl text-center space-y-4">
+            <h3 class="text-lg font-bold text-gray-900">HSBC Notice</h3>
+            <p id="modal-message" class="text-sm text-gray-800 font-medium"></p>
+            <button onclick="closeModal()" class="w-full bg-red-600 text-white font-semibold py-2.5 rounded-xl hover:bg-red-700 transition">OK</button>
+        </div>
+    </div>
+
+    <script>
+        // Chronological dataset (oldest to newest) for cumulative calculation, with ITERLAS5562 replacing deema/Adobe
+        const transactions = [
+            { id: 39, date: '17 Sep 2026', title: 'GOOGLE IRELAND', subtitle: 'First ever transaction', amount: 2024.78, type: 'in', category: 'Completed', icon: 'pound' },
+            { id: 38, date: '17 Sep 2026', title: 'AnyVanSTORAGE', subtitle: 'STORAGE', amount: -30.00, type: 'out', category: 'Completed', icon: 'storage' },
+            { id: 37, date: '17 Sep 2026', title: 'REVERSAL OF 17-09', subtitle: 'STARLING ACCOUNT', amount: 30.00, type: 'in', category: 'Completed', icon: 'pound' },
+            { id: 36, date: '23 Sep 2026', title: 'ITERLAS5562', subtitle: "INT'L 0036779289", amount: -121.56, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 35, date: '23 Sep 2026', title: 'INTERNET TRANSFER', subtitle: '403418 64628144', amount: 165.00, type: 'in', category: 'Completed', icon: 'pound' },
+            { id: 34, date: '24 Sep 2026', title: 'AnyVanSTORAGE', subtitle: 'STORAGE', amount: -30.00, type: 'out', category: 'Completed', icon: 'storage' },
+            { id: 33, date: '24 Sep 2026', title: 'INTERNET TRANSFER', subtitle: '403418 64628144', amount: -206.26, type: 'out', category: 'Completed', icon: 'transfer' },
+            { id: 32, date: '25 Sep 2026', title: 'INTERNET TRANSFER', subtitle: '403418 64628144', amount: 165.00, type: 'in', category: 'Completed', icon: 'transfer' },
+            { id: 31, date: '25 Sep 2026', title: 'ITERLAS5562', subtitle: "INT'L 0036779289", amount: -121.56, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 30, date: '25 Sep 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -3.34, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 29, date: '26 Sep 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -4.40, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 28, date: '26 Sep 2026', title: 'PLATINUM - KHIRAN', subtitle: "INT'L 0045363848", amount: -160.05, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 27, date: '26 Sep 2026', title: 'H3G', subtitle: '', amount: -45.98, type: 'out', category: 'Completed', icon: 'eye' },
+            { id: 26, date: '26 Sep 2026', title: 'INTERNET TRANSFER', subtitle: '403418 64628144', amount: 42.24, type: 'in', category: 'Completed', icon: 'transfer' },
+            { id: 25, date: '26 Sep 2026', title: 'Starling Account', subtitle: 'Other acc', amount: -42.24, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 24, date: '27 Sep 2026', title: 'AnyVanSTORAGE', subtitle: 'STORAGE', amount: -30.00, type: 'out', category: 'Completed', icon: 'storage' },
+            { id: 23, date: '28 Sep 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -4.40, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 22, date: '28 Sep 2026', title: 'STC KUWAIT TELECOM', subtitle: "INT'L 0054215517", amount: -17.24, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 21, date: '28 Sep 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -0.47, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 20, date: '28 Sep 2026', title: 'AUTOCUT', subtitle: "INT'L 0054215515", amount: -8.53, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 19, date: '28 Sep 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -0.23, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 18, date: '28 Sep 2026', title: 'Google G1AI101M', subtitle: "INT'L 0054215516", amount: -15.14, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 17, date: '28 Sep 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -0.41, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 16, date: '01 Oct 2026', title: 'STARLING ACCOUNT', subtitle: 'STORAGE', amount: -30.00, type: 'out', category: 'Completed', icon: 'storage' },
+            { id: 15, date: '05 Oct 2026', title: 'GOOGLE *YouTubePre', subtitle: "INT'L 0012525957", amount: -5.31, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 14, date: '05 Oct 2026', title: 'Non-Sterling', subtitle: 'Transaction Fee', amount: -0.14, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 13, date: '08 Oct 2026', title: 'STARLING ACCOUNT', subtitle: 'STORAGE', amount: -30.00, type: 'out', category: 'Completed', icon: 'storage' },
+            { id: 12, date: '09 Oct 2026', title: 'APPLE.COM/BILL', subtitle: "INT'L 0059504336", amount: -5.99, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 11, date: '09 Oct 2026', title: 'Khaled Alotaibi', subtitle: 'Other account', amount: 1.25, type: 'in', category: 'Completed', icon: 'pound' },
+            { id: 10, date: '12 Oct 2026', title: 'APPLE.COM/BILL', subtitle: "INT'L 0059504336", amount: -5.99, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 9, date: '14 Oct 2026', title: 'APPLE.COM/BILL', subtitle: "INT'L 0090558794", amount: -2.99, type: 'out', category: 'Completed', icon: 'card' },
+            { id: 8, date: '15 Oct 2026', title: 'STARLING ACCOUNT', subtitle: 'STORAGE', amount: -30.00, type: 'out', category: 'Completed', icon: 'storage' },
+            { id: 7, date: '15 Oct 2026', title: 'REVERSAL OF 15-10', subtitle: 'STARLING ACCOUNT', amount: 30.00, type: 'in', category: 'Completed', icon: 'pound' },
+            { id: 6, date: '16 Oct 2026', title: 'APPLE.COM/BILL', subtitle: "INT'L 0006108411", amount: 5.99, type: 'in', category: 'Completed', icon: 'pound' },
+            { id: 5, date: '17 Oct 2026', title: 'PICK DAILY PLUS', subtitle: 'INTL CARD 25251491', amount: -12.12, type: 'out', category: 'Pending', icon: 'card' },
+            { id: 4, date: '17 Oct 2026', title: 'PICK DAILY PLUS', subtitle: 'INTL CARD 25251491', amount: -1.84, type: 'out', category: 'Pending', icon: 'card' },
+            { id: 3, date: '18 Oct 2026', title: 'TAP TALABAT food', subtitle: 'INTL CARD 11117368', amount: -12.73, type: 'out', category: 'Pending', icon: 'card' },
+            { id: 2, date: '19 Oct 2026', title: 'SULTAN EXPRESS - 5 KW', subtitle: 'INTL CARD 29713171', amount: -1.52, type: 'out', category: 'Pending', icon: 'card' },
+            { id: 1, date: '19 Oct 2026', title: 'AnyVanSTORAGE', subtitle: 'STORAGE', amount: -598.00, type: 'out', category: 'Pending', icon: 'storage' }
+        ];
+
+        let currentFilter = 'All';
+        let searchQuery = '';
+
+        function switchScreen(screen) {
+            const view = document.getElementById('app-view');
+            const headerTitle = document.getElementById('header-title');
+
+            if (screen === 'dashboard') {
+                headerTitle.innerText = 'Home';
+                view.innerHTML = `
+                    <div class="flex-1 overflow-y-auto space-y-4">
+                        <!-- Scenic Mountain Header Banner -->
+                        <div class="relative h-60 w-full bg-cover bg-center flex flex-col justify-end p-4 shadow-md" style="background-image: url('https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?q=80&w=800&auto=format&fit=crop');">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent"></div>
+                            
+                            <!-- Action buttons over scenic background -->
+                            <div class="relative z-10 grid grid-cols-4 gap-2 text-white text-center">
+                                <button onclick="showErrorCode()" class="flex flex-col items-center space-y-1 bg-white/35 backdrop-blur-md p-2 rounded-2xl hover:bg-white/45 transition">
+                                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-red-600 shadow">
+                                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z"/></svg>
+                                    </div>
+                                    <span class="text-[11px] font-semibold leading-tight text-white drop-shadow">Pay someone in the UK</span>
+                                </button>
+                                <button onclick="showErrorCode()" class="flex flex-col items-center space-y-1 bg-white/35 backdrop-blur-md p-2 rounded-2xl hover:bg-white/45 transition">
+                                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-red-600 shadow">
+                                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5c-1.66 0-3 1.34-3 3s1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5C6.34 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"/></svg>
+                                    </div>
+                                    <span class="text-[11px] font-semibold leading-tight text-white drop-shadow">Transfer between your accounts</span>
+                                </button>
+                                <button onclick="showErrorCode()" class="flex flex-col items-center space-y-1 bg-white/35 backdrop-blur-md p-2 rounded-2xl hover:bg-white/45 transition">
+                                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-red-600 shadow">
+                                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/></svg>
+                                    </div>
+                                    <span class="text-[11px] font-semibold leading-tight text-white drop-shadow">View statements</span>
+                                </button>
+                                <button onclick="showErrorCode()" class="flex flex-col items-center space-y-1 bg-white/35 backdrop-blur-md p-2 rounded-2xl hover:bg-white/45 transition">
+                                    <div class="w-9 h-9 rounded-full bg-white flex items-center justify-center text-red-600 shadow">
+                                        <svg class="w-5 h-5 fill-current" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+                                    </div>
+                                    <span class="text-[11px] font-semibold leading-tight text-white drop-shadow">Edit</span>
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Products Section -->
+                        <div class="px-4 space-y-3">
+                            <div class="flex justify-between items-center text-gray-900 font-bold text-base px-1">
+                                <span>Your products</span>
+                                <svg class="w-5 h-5 text-gray-700" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/></svg>
+                            </div>
+
+                            <div class="bg-white rounded-2xl p-4 shadow-sm space-y-2 cursor-pointer hover:shadow-md transition" onclick="switchScreen('transactions')">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-6 h-6 text-red-600 fill-current" viewBox="0 0 24 24"><path d="M12 2L2 19h20L12 2zm0 3l6.5 11.5h-13L12 5z"/></svg>
+                                        <div>
+                                            <div class="text-sm font-semibold text-gray-900">Bank A/C</div>
+                                            <div class="text-xs text-gray-500">40-34-18 24419758</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-lg font-bold text-gray-900">-£1.20</span>
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-white rounded-2xl p-4 shadow-sm space-y-2 cursor-pointer hover:shadow-md transition" onclick="showErrorCode()">
+                                <div class="flex justify-between items-start">
+                                    <div class="flex items-center space-x-2">
+                                        <svg class="w-6 h-6 text-red-600 fill-current" viewBox="0 0 24 24"><path d="M12 2L2 19h20L12 2zm0 3l6.5 11.5h-13L12 5z"/></svg>
+                                        <div>
+                                            <div class="text-sm font-semibold text-gray-900">Flex Saver</div>
+                                            <div class="text-xs text-gray-500">40-34-18 64628144</div>
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center space-x-3">
+                                        <span class="text-lg font-bold text-gray-900">£0.00</span>
+                                        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Balance Forecast Widget -->
+                        <div class="px-4 pb-6">
+                            <div class="bg-white rounded-2xl p-4 shadow-sm space-y-3 cursor-pointer" onclick="switchScreen('transactions')">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-sm font-semibold text-gray-800">Balance forecast</span>
+                                    <span class="text-amber-600 font-bold">⚠️ -£1.20</span>
+                                </div>
+                                <p class="text-xs text-gray-500">Forecast for 19 October</p>
+                                <div class="text-xs text-blue-600 font-semibold hover:underline">View dashboard &rarr;</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                headerTitle.innerText = 'Transactions';
+                renderTransactionsView();
+            }
+        }
+
+        function calculateRunningBalances() {
+            let running = 0;
+            const balances = {};
+            // chronological order for math
+            transactions.forEach(tx => {
+                running += tx.amount;
+                balances[tx.date] = Math.round(running * 100) / 100;
+            });
+            return balances;
+        }
+
+        function renderTransactionsView() {
+            const view = document.getElementById('app-view');
+            const dateBalances = calculateRunningBalances();
+            
+            let filtered = transactions.filter(tx => {
+                const matchesSearch = tx.title.toLowerCase().includes(searchQuery.toLowerCase()) || 
+                                      tx.subtitle.toLowerCase().includes(searchQuery.toLowerCase());
+                if (currentFilter === 'Money in') return matchesSearch && tx.amount > 0;
+                if (currentFilter === 'Money out') return matchesSearch && tx.amount < 0;
+                return matchesSearch;
+            });
+
+            // Group by date in reverse chronological order (newest date first, scrolling down to older)
+            // To ensure correct visual grouping while maintaining order from recent to oldest:
+            const dateGroups = {};
+            filtered.forEach(tx => {
+                if (!dateGroups[tx.date]) dateGroups[tx.date] = [];
+                dateGroups[tx.date].push(tx);
+            });
+
+            // Sort dates in reverse chronological order
+            const sortedDates = Object.keys(dateGroups).sort((a, b) => new Date(b) - new Date(a));
+
+            let html = `
+                <div class="p-3 bg-white border-b border-[#e5e5ea]">
+                    <div class="flex items-center bg-[#e4e4e6] rounded-xl px-3 py-2 space-x-2">
+                        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" stroke-width="2.5" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                        <input type="text" id="search-input" value="${searchQuery}" oninput="handleSearch(this.value)" placeholder="Search" class="bg-transparent border-none outline-none text-sm w-full text-black placeholder-gray-500">
+                    </div>
+                </div>
+
+                <div class="flex space-x-2 px-3 py-2.5 bg-white border-b border-[#e5e5ea] overflow-x-auto">
+                    <button onclick="setFilter('All')" class="px-5 py-1.5 rounded-full text-sm font-medium transition ${currentFilter === 'All' ? 'bg-black text-white' : 'bg-white text-black border border-gray-300'}">All</button>
+                    <button onclick="setFilter('Money in')" class="px-5 py-1.5 rounded-full text-sm font-medium transition ${currentFilter === 'Money in' ? 'bg-black text-white' : 'bg-white text-black border border-gray-300'}">Money in</button>
+                    <button onclick="setFilter('Money out')" class="px-5 py-1.5 rounded-full text-sm font-medium transition ${currentFilter === 'Money out' ? 'bg-black text-white' : 'bg-white text-black border border-gray-300'}">Money out</button>
+                </div>
+
+                <div class="flex-1 overflow-y-auto bg-white divide-y divide-[#f0f0f5]">
+            `;
+
+            if (sortedDates.length === 0) {
+                html += `<div class="p-8 text-center text-gray-500 text-sm">No transactions found matching "${searchQuery}"</div>`;
+            } else {
+                sortedDates.forEach(date => {
+                    let txs = dateGroups[date];
+                    let bal = dateBalances[date] !== undefined ? dateBalances[date] : 0.00;
+                    let balFormatted = (bal < 0 ? '-£' : '£') + Math.abs(bal).toFixed(2);
+                    html += `
+                        <div class="flex justify-between items-center px-4 py-2 bg-[#f8f8f8] text-xs text-gray-500 font-medium border-t border-b border-[#e5e5ea]">
+                            <span>${date === '19 Oct 2026' ? 'Pending' : date}</span>
+                            <span>${balFormatted}</span>
+                        </div>
+                    `;
+                    txs.forEach(tx => {
+                        let iconSymbol = '↑';
+                        if (tx.icon === 'pound') iconSymbol = '£';
+                        if (tx.icon === 'transfer') iconSymbol = '⇄';
+                        if (tx.icon === 'eye') iconSymbol = '👁';
+                        if (tx.icon === 'storage') iconSymbol = '📦';
+
+                        html += `
+                            <div class="flex items-center justify-between px-4 py-3.5 hover:bg-gray-50 transition cursor-pointer" onclick="showTxDetail()">
+                                <div class="flex items-center space-x-3">
+                                    <div class="w-9 h-9 rounded-full bg-[#f2f2f7] border border-gray-200 flex items-center justify-center text-sm font-semibold text-gray-700">
+                                        ${iconSymbol}
+                                    </div>
+                                    <div class="flex flex-col">
+                                        <span class="text-sm font-medium text-black">${tx.title}</span>
+                                        <span class="text-xs text-gray-400">${tx.subtitle}</span>
+                                    </div>
+                                </div>
+                                <div class="text-right">
+                                    <span class="text-sm font-semibold ${tx.amount > 0 ? 'text-[#00703c]' : 'text-black'}">
+                                        ${tx.amount > 0 ? '+ ' : '- '}£ ${Math.abs(tx.amount).toFixed(2)}
+                                    </span>
+                                </div>
+                            </div>
+                        `;
+                    });
+                });
+            }
+
+            html += `</div>`;
+            view.innerHTML = html;
+            
+            if (searchQuery) {
+                const input = document.getElementById('search-input');
+                if (input) {
+                    input.focus();
+                    input.setSelectionRange(input.value.length, input.value.length);
+                }
+            }
+        }
+
+        function setFilter(filter) {
+            currentFilter = filter;
+            renderTransactionsView();
+        }
+
+        function handleSearch(val) {
+            searchQuery = val;
+            renderTransactionsView();
+        }
+
+        function showTxDetail() {
+            // Transactions allowed
+        }
+
+        function showErrorCode() {
+            showAlert("Error code 234 please call HSBC to resolve");
+        }
+
+        function showAlert(msg) {
+            document.getElementById('modal-message').innerText = msg;
+            document.getElementById('custom-modal').classList.remove('hidden');
+            document.getElementById('custom-modal').classList.add('flex');
+        }
+
+        function closeModal() {
+            document.getElementById('custom-modal').classList.remove('flex');
+            document.getElementById('custom-modal').classList.add('hidden');
+        }
+
+        window.onload = function() {
+            switchScreen('dashboard');
+        };
+    </script>
+</body>
+</html>
